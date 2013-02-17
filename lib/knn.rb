@@ -1,42 +1,52 @@
 class KNN
 
-  def initialize k = 3
-    @k = k
-    @parser = Parser.new
-    @data = {}
+  def initialize
+    @samples = []
   end
 
-  def load_data file_path
-    @parser.from_file(file_path).each do |e|
-      @data[e.vector]= e.value
-    end
+  def train file_path
+    @samples = from_file(file_path)
   end
 
-  def value_for vector 
-    return @data[vector] if @data[vector]
-
-    heap = MaxHeap.new
-
-    @data.each do |k, v|
-      distance = distance_between(k, vector)
-      heap.insert Node.new(distance, v)
-    end
-
-    top_k = heap.take_top @k
-    value_with_max_vote top_k
+  def categorize candidate, k
+    neighbours = nearest_neighbours_for candidate, k
+    value_with_max_vote neighbours
   end
-
+  
   private
+
+  def nearest_neighbours_for candidate, k
+    heap = MaxHeap.new
+    @samples.each do |sample|
+      distance = distance_between(sample[:vector], candidate)
+      heap.insert Node.new(distance, sample)
+    end
+    heap.take_top(k).compact.map(&:sample)
+  end
 
   def distance_between a, b
     a.zip(b).map {|x| x[0] - x[1]}.inject(0){|sum, x| sum += x*x}
   end
 
   def value_with_max_vote xs
-    votes = xs.group_by{ |x| x.value }.map{ |result, group| [result, group.length]}
+    value_with_votes = xs.group_by{ |x| x[:value]}.map{ |value, group| {:value => value, :votes => group.length}}
+    value_with_votes.max_by { |x| x[:votes] }[:value]
+  end
 
-    max_voted = votes.max_by { |x| x[1] }
-    max_voted[0]
+
+  def from_file file_path
+    data = []
+    File.open(file_path, 'r') do |file|
+      while(line = file.gets)
+        data << parse(line)
+      end
+    end
+    data
+  end
+
+  def parse formated_data
+    splited = formated_data.split '|'
+    vector = splited[0].split(',').map {|e| e.to_f}
+    {:vector => vector, :value => splited[1].strip}
   end
 end
-

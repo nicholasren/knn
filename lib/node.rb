@@ -1,10 +1,10 @@
 class Node
   include Comparable
   
-  attr_accessor :distance, :value
-  def initialize distance, value
+  attr_accessor :distance, :sample
+  def initialize distance, sample
     @distance = distance
-    @value = value
+    @sample = sample
   end
 
   def <=>(other)
