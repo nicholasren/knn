@@ -1,9 +1,5 @@
 class KNN
 
-  def initialize
-    @samples = []
-  end
-
   def train file_path
     @samples = from_file(file_path)
   end
